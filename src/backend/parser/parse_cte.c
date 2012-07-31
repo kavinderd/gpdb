@@ -674,6 +674,18 @@ checkWellFormedRecursion(CteState *cstate)
 		if (cstate->selfrefcount != 1)			/* shouldn't happen */
 			elog(ERROR, "missing recursive reference");
 
+		/* WITH mustn't contain self-reference, either */
+		if (stmt->withClause)
+		{
+			cstate->curitem = i;
+			cstate->innerwiths = NIL;
+			cstate->selfrefcount = 0;
+			cstate->context = RECURSION_SUBLINK;
+			checkWellFormedRecursionWalker((Node *) stmt->withClause->ctes,
+										   cstate);
+			Assert(cstate->innerwiths == NIL);
+		}
+
 		/*
 		 * Disallow ORDER BY and similar decoration atop the UNION ALL.
 		 * These don't make sense because it's impossible to figure out what
@@ -1002,7 +1014,7 @@ checkWellFormedSelectStmt(SelectStmt *stmt, CteState *cstate)
 											   cstate);
 				checkWellFormedRecursionWalker((Node *) stmt->lockingClause,
 											   cstate);
-				break;
+				/* stmt->withClause is intentionally ignored here */
 				break;
 			case SETOP_EXCEPT:
 				if (stmt->all)
@@ -1021,6 +1033,7 @@ checkWellFormedSelectStmt(SelectStmt *stmt, CteState *cstate)
 											   cstate);
 				checkWellFormedRecursionWalker((Node *) stmt->lockingClause,
 											   cstate);
+				/* stmt->withClause is intentionally ignored here */
 				break;
 			default:
 				elog(ERROR, "unrecognized set op: %d",

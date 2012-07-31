@@ -955,7 +955,6 @@ typedef struct SelectStmt
 	Node	   *havingClause;	/* HAVING conditional-expression */
 	List	   *windowClause;	/* window specification clauses */
 	List       *scatterClause;	/* GPDB: TableValueExpr data distribution */
-	WithClause *withClause; 	/* WITH clause */
 
 	/*
 	 * In a "leaf" node representing a VALUES list, the above fields are all
@@ -975,6 +974,7 @@ typedef struct SelectStmt
 	Node	   *limitOffset;	/* # of result tuples to skip */
 	Node	   *limitCount;		/* # of result tuples to return */
 	List	   *lockingClause;	/* FOR UPDATE (list of LockingClause's) */
+	WithClause *withClause;		/* WITH clause */
 
 	/*
 	 * These fields are used only in upper-level SelectStmts.

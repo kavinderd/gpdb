@@ -1602,8 +1602,6 @@ raw_expression_tree_walker(Node *node, bool (*walker) (), void *context)
 					return true;
 				if (walker(stmt->havingClause, context))
 					return true;
-				if (walker(stmt->withClause, context))
-					return true;
 				if (walker(stmt->valuesLists, context))
 					return true;
 				if (walker(stmt->sortClause, context))
@@ -1613,6 +1611,8 @@ raw_expression_tree_walker(Node *node, bool (*walker) (), void *context)
 				if (walker(stmt->limitCount, context))
 					return true;
 				if (walker(stmt->lockingClause, context))
+					return true;
+				if (walker(stmt->withClause, context))
 					return true;
 				if (walker(stmt->larg, context))
 					return true;
