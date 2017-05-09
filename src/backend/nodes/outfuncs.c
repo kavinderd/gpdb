@@ -3959,6 +3959,7 @@ _outRangeFunction(StringInfo str, RangeFunction *node)
 }
 #endif
 
+#ifndef COMPILING_BINARY_FUNCS
 static void
 _outConstraint(StringInfo str, Constraint *node)
 {

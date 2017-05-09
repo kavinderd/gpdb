@@ -632,7 +632,7 @@ typedef enum RTEKind
 	RTE_SPECIAL,				/* special rule relation (NEW or OLD) */
 	RTE_FUNCTION,				/* function in FROM */
 	RTE_VALUES,					/* VALUES (<exprlist>), (<exprlist>), ... */
-	RTE_CTE						/* common table expr (WITH list element) */
+	RTE_CTE,					/* common table expr (WITH list element) */
 	RTE_TABLEFUNCTION,          /* CDB: Functions over multiset input */
 	RTE_VOID,                   /* CDB: deleted RTE */
 } RTEKind;
