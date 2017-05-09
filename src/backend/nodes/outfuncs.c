@@ -3959,26 +3959,6 @@ _outRangeFunction(StringInfo str, RangeFunction *node)
 }
 #endif
 
-#ifndef COMPILING_BINARY_FUNCS
-static void
-_outRangeSubselect(StringInfo str, RangeSubselect *node)
-{
-	WRITE_NODE_TYPE("RANGESUBSELECT");
-
-	WRITE_NODE_FIELD(subquery);
-	WRITE_NODE_FIELD(alias);
-}
-
-static void
-_outRangeFunction(StringInfo str, RangeFunction *node)
-{
-	WRITE_NODE_TYPE("RANGEFUNCTION");
-
-	WRITE_NODE_FIELD(funccallnode);
-	WRITE_NODE_FIELD(alias);
-	WRITE_NODE_FIELD(coldeflist);
-}
-
 static void
 _outConstraint(StringInfo str, Constraint *node)
 {
@@ -5095,12 +5075,6 @@ _outNode(StringInfo str, void *obj)
 				break;
 			case T_ResTarget:
 				_outResTarget(str, obj);
-				break;
-			case T_RangeSubselect:
-				_outRangeSubselect(str, obj);
-				break;
-			case T_RangeFunction:
-				_outRangeFunction(str, obj);
 				break;
 			case T_RangeSubselect:
 				_outRangeSubselect(str, obj);

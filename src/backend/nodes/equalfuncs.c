@@ -2244,11 +2244,6 @@ _equalRangeTblEntry(RangeTblEntry *a, RangeTblEntry *b)
 	COMPARE_SCALAR_FIELD(inFromCl);
 	COMPARE_SCALAR_FIELD(requiredPerms);
 	COMPARE_SCALAR_FIELD(checkAsUser);
-	COMPARE_STRING_FIELD(ctename);
-	COMPARE_SCALAR_FIELD(ctelevelsup);
-	COMPARE_SCALAR_FIELD(self_reference);
-	COMPARE_NODE_FIELD(ctecoltypes);
-	COMPARE_NODE_FIELD(ctecoltypmods);
 
 	return true;
 }

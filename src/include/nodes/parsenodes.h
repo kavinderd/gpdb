@@ -712,15 +712,6 @@ typedef struct RangeTblEntry
 	bool		forceDistRandom;
 
 	/*
-	 * Fields valid for a CTE RTE (else NULL/zero):
-	 */
-	char	   *ctename;		/* name of the WITH list item */
-	Index		ctelevelsup;	/* number of query levels up */
-	bool		self_reference; /* is this a recursive self-reference? */
-	List	   *ctecoltypes;	/* OID list of column type OIDs */
-	List	   *ctecoltypmods;	/* integer list of column typmods */
-
-	/*
 	 * Fields valid in all RTEs:
 	 */
 	Alias	   *alias;			/* user-written alias clause, if any */
