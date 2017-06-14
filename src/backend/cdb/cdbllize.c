@@ -913,7 +913,9 @@ pull_up_Flow(Plan *plan, Plan *subplan, bool withSort)
 	if (IsA(plan, MergeJoin) || IsA(plan, NestLoop) || IsA(plan, HashJoin))
 		Assert(subplan == plan->lefttree || subplan == plan->righttree);
 	else if ( IsA(plan, Append) )
-		Assert(list_member(((Append*)plan)->appendplans, subplan)); 
+		Assert(list_member(((Append*)plan)->appendplans, subplan));
+	else if ( IsA(plan, RecursiveUnion) )
+		; // FIXME honestly, i don't know what should happen
 	else
 		Assert(subplan == plan->lefttree);
 

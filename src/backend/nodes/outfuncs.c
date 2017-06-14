@@ -3499,6 +3499,7 @@ _outQuery(StringInfo str, Query *node)
 	WRITE_BOOL_FIELD(hasWindFuncs);
 	WRITE_BOOL_FIELD(hasSubLinks);
 	WRITE_BOOL_FIELD(hasDynamicFunctions);
+	WRITE_NODE_FIELD(cteList);
 	WRITE_NODE_FIELD(rtable);
 	WRITE_NODE_FIELD(jointree);
 	WRITE_NODE_FIELD(targetList);
@@ -3509,7 +3510,6 @@ _outQuery(StringInfo str, Query *node)
 	WRITE_NODE_FIELD(distinctClause);
 	WRITE_NODE_FIELD(sortClause);
 	WRITE_NODE_FIELD(scatterClause);
-	WRITE_NODE_FIELD(cteList);
 	WRITE_BOOL_FIELD(hasRecursive);
 	WRITE_BOOL_FIELD(hasModifyingCTE);
 	WRITE_NODE_FIELD(limitOffset);

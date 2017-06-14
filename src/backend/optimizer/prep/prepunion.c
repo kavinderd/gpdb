@@ -324,6 +324,8 @@ generate_recursion_plan(SetOperationStmt *setOp, PlannerInfo *root,
 	plan = (Plan *) make_recursive_union(tlist, lplan, rplan,
 										 root->wt_param_id);
 
+	plan->flow = pull_up_Flow(plan, rplan, true);
+
 	*sortClauses = NIL;			/* result of UNION ALL is always unsorted */
 
 	return plan;

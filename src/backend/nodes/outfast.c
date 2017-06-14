@@ -1195,6 +1195,9 @@ _outNode(StringInfo str, void *obj)
 			case T_Append:
 				_outAppend(str, obj);
 				break;
+			case T_RecursiveUnion:
+				_outRecursiveUnion(str, obj);
+				break;
 			case T_Sequence:
 				_outSequence(str, obj);
 				break;
@@ -1221,6 +1224,9 @@ _outNode(StringInfo str, void *obj)
 				break;
 			case T_DynamicTableScan:
 				_outDynamicTableScan(str, obj);
+				break;
+			case T_WorkTableScan:
+				_outWorkTableScan(str, obj);
 				break;
 			case T_ExternalScan:
 				_outExternalScan(str, obj);
