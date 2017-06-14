@@ -975,7 +975,7 @@ set_cte_pathlist(PlannerInfo *root, RelOptInfo *rel, RangeTblEntry *rte)
 		 */
 		subquery = push_down_restrict(root, rel, rte, rel->relid, subquery);
 
-		subplan = subquery_planner(cteroot->glob, subquery, root, false,
+		subplan = subquery_planner(cteroot->glob, subquery, root, cte->cterecursive,
 								   tuple_fraction, &subroot, config);
 
 		subrtable = subroot->parse->rtable;
@@ -1009,7 +1009,7 @@ set_cte_pathlist(PlannerInfo *root, RelOptInfo *rel, RangeTblEntry *rte)
 			 */
 			config->gp_cte_sharing = false;
 
-			subplan = subquery_planner(cteroot->glob, subquery, cteroot, false,
+			subplan = subquery_planner(cteroot->glob, subquery, cteroot, cte->cterecursive,
 									   tuple_fraction, &subroot, config);
 
 			cteplaninfo->shared_plan = prepare_plan_for_sharing(cteroot, subplan);

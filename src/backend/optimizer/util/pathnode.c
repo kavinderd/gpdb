@@ -2423,10 +2423,18 @@ Path *
 create_worktablescan_path(PlannerInfo *root, RelOptInfo *rel)
 {
 	Path	   *pathnode = makeNode(Path);
+	CdbPathLocus result;
+//	CdbPathLocus_MakeStrewn(&result);
+	CdbPathLocus_MakeEntry(&result);
 
 	pathnode->pathtype = T_WorkTableScan;
 	pathnode->parent = rel;
 	pathnode->pathkeys = NIL;	/* result is always unordered */
+
+	pathnode->locus = result;
+	pathnode->motionHazard = false;
+	pathnode->rescannable = true;
+	pathnode->sameslice_relids = rel->relids;
 
 	/* Cost is the same as for a regular CTE scan */
 	cost_ctescan(pathnode, root, rel);
