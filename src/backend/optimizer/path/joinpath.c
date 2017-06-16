@@ -424,6 +424,8 @@ match_unsorted_outer(PlannerInfo *root,
 				unique_path->umethod == UNIQUE_PATH_HASH)
 				materialize_inner = false;
 		}
+		else if (inner_cheapest_total->pathtype == T_WorkTableScan)
+			materialize_inner = false;
 
 		if (materialize_inner)
 			matpath = (Path *)create_material_path(root, innerrel, inner_cheapest_total);

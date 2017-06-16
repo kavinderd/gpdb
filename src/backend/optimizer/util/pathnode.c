@@ -2424,8 +2424,8 @@ create_worktablescan_path(PlannerInfo *root, RelOptInfo *rel)
 {
 	Path	   *pathnode = makeNode(Path);
 	CdbPathLocus result;
-//	CdbPathLocus_MakeStrewn(&result);
-	CdbPathLocus_MakeEntry(&result);
+	CdbPathLocus_MakeStrewn(&result); /* FIXME: This is a hack. */
+//	CdbPathLocus_MakeEntry(&result);
 
 	pathnode->pathtype = T_WorkTableScan;
 	pathnode->parent = rel;
