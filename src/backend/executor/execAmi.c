@@ -639,6 +639,8 @@ ExecEagerFree(PlanState *node)
 		case T_DynamicIndexScanState:
 		case T_SequenceState:
 		case T_PartitionSelectorState:
+		case T_WorkTableScanState:
+		case T_RecursiveUnionState: /* TODO: Eager Free RecursiveUnion */
 			break;
 
 		case T_TableScanState:
