@@ -451,7 +451,7 @@ ExecInitHashJoin(HashJoin *node, EState *estate, int eflags)
 	hjstate = makeNode(HashJoinState);
 	hjstate->js.ps.plan = (Plan *) node;
 	hjstate->js.ps.state = estate;
-	hjstate->js.ps.delayEagerFree = (eflags & EXEC_FLAG_RECURSIVE) != 0;
+	hjstate->js.ps.delayEagerFree = (eflags & EXEC_FLAG_REWIND) != 0;
 
 	/*
 	 * Miscellaneous initialization
