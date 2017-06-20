@@ -82,6 +82,10 @@ add_paths_to_joinrel(PlannerInfo *root,
            innerrel->cheapest_startup_path &&
            innerrel->cheapest_total_path);
 
+	if (innerrel->cheapest_startup_path->pathtype == T_WorkTableScan ||
+		innerrel->cheapest_total_path->pathtype == T_WorkTableScan)
+		return;
+
 	/*
 	 * Find potential mergejoin clauses.  We can skip this if we are not
 	 * interested in doing a mergejoin.  However, mergejoin is currently our
