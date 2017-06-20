@@ -37,7 +37,7 @@ cdb_add_subquery_join_paths(PlannerInfo    *root,
 					        JoinType        jointype,
 					        JoinType        swapjointype,
 					        List           *restrictlist);
-static bool has_join_restriction(PlannerInfo *root, RelOptInfo *rel);
+bool has_join_restriction(PlannerInfo *root, RelOptInfo *rel);
 static bool has_legal_joinclause(PlannerInfo *root, RelOptInfo *rel);
 static bool is_dummy_rel(RelOptInfo *rel);
 static void mark_dummy_join(PlannerInfo *root, RelOptInfo *rel);
@@ -937,7 +937,7 @@ have_join_order_restriction(PlannerInfo *root,
  * say "true" incorrectly.	(Therefore, we don't bother with the relatively
  * expensive has_legal_joinclause test.)
  */
-static bool
+bool
 has_join_restriction(PlannerInfo *root, RelOptInfo *rel)
 {
 	ListCell   *l;

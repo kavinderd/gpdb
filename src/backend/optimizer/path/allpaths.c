@@ -1159,7 +1159,7 @@ make_rel_from_joinlist(PlannerInfo *root, List *joinlist)
 		List *rels = NIL;
 		foreach(lc, initial_rels)
 		{
-			RelOptInfo *rel = (RelOptInfo *) list_first(lc);
+			RelOptInfo *rel = (RelOptInfo *) lfirst(lc);
 			RangeTblEntry *rte = (RangeTblEntry *) list_nth(root->parse->rtable, rel->relid);
 			if (rte->self_reference)
 			{
@@ -1168,7 +1168,7 @@ make_rel_from_joinlist(PlannerInfo *root, List *joinlist)
 			}
 			else
 			{
-				rels = list_append(rels, rel);
+				rels = lappend(rels, rel);
 			}
 		}
 		/*
