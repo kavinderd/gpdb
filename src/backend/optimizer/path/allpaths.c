@@ -1160,7 +1160,7 @@ make_rel_from_joinlist(PlannerInfo *root, List *joinlist)
 		foreach(lc, initial_rels)
 		{
 			RelOptInfo *rel = (RelOptInfo *) lfirst(lc);
-			RangeTblEntry *rte = (RangeTblEntry *) list_nth(root->parse->rtable, rel->relid);
+			RangeTblEntry *rte = (RangeTblEntry *) list_nth(root->parse->rtable, rel->relid - 1);
 			if (rte->self_reference)
 			{
 				Assert(wtRel == NULL);
