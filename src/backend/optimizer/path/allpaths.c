@@ -1221,6 +1221,7 @@ make_rel_from_joinlist(PlannerInfo *root, List *joinlist)
 				RelOptInfo *jrel;
 
 				jrel = make_join_rel(root, wtRel, rel);
+				set_cheapest(root, jrel);
 
 				return jrel;
 			}
