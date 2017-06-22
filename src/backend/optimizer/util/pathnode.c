@@ -268,6 +268,28 @@ compare_path_costs(Path *path1, Path *path2, CostSelector criterion)
 	return 0;
 }
 
+static int
+compare_recursive_path_costs(Path *path1, Path *path2)
+{
+	bool	isWTpath1;
+	bool	isWTpath2;
+
+	if (!IsJoinPath(path1) || !IsJoinPath(path2))
+		return 0;
+
+	isWTpath1 = ((JoinPath *) path1)->outerjoinpath->pathtype == T_WorkTableScan;
+	isWTpath2 = ((JoinPath *) path2)->outerjoinpath->pathtype == T_WorkTableScan;
+
+	if (isWTpath1 && isWTpath2)
+		return 0;
+	else if (isWTpath1)
+		return -1;
+	else if (isWTpath2)
+		return +1;
+	else
+		return 0;
+}
+
 /*
  * compare_fuzzy_path_costs
  *	  Return -1, 0, or +1 according as path1 is cheaper, the same cost,
@@ -281,6 +303,12 @@ compare_path_costs(Path *path1, Path *path2, CostSelector criterion)
 static int
 compare_fuzzy_path_costs(Path *path1, Path *path2, CostSelector criterion)
 {
+	int		cmp;
+
+	cmp = compare_recursive_path_costs(path1, path2);
+	if (cmp != 0)
+		return cmp;
+
 	/*
 	 * We use a fuzz factor of 1% of the smaller cost.
 	 *
