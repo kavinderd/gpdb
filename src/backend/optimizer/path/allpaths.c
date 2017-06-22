@@ -942,8 +942,7 @@ set_cte_pathlist(PlannerInfo *root, RelOptInfo *rel, RangeTblEntry *rte)
 	 * qual expressions between multiple references, but
 	 * so far we don't support it.
 	 */
-	if (!root->config->gp_cte_sharing ||
-		(cte->cterefcount) == 1)
+	if (!root->config->gp_cte_sharing || cte->cterefcount == 1)
 	{
 		PlannerConfig *config = CopyPlannerConfig(root->config);
 
@@ -959,21 +958,24 @@ set_cte_pathlist(PlannerInfo *root, RelOptInfo *rel, RangeTblEntry *rte)
 		 */
 		config->gp_cte_sharing = false;
 
-		/*
-		 * Adjust the subquery so that 'root', i.e. this subquery, is the
-		 * parent of the CTE subquery, even though the CTE might've been
-		 * higher up syntactically. This is because some of the quals that
-		 * we push down might refer to relations between the current level
-		 * and the CTE's syntactical level. Such relations are not visible
-		 * at the CTE's syntactical level, and SS_finalize_plan() would
-		 * throw an error on them.
-		 */
-		IncrementVarSublevelsUp((Node *) subquery, rte->ctelevelsup, 1);
+		if (!cte->cterecursive)
+		{
+			/*
+			 * Adjust the subquery so that 'root', i.e. this subquery, is the
+			 * parent of the CTE subquery, even though the CTE might've been
+			 * higher up syntactically. This is because some of the quals that
+			 * we push down might refer to relations between the current level
+			 * and the CTE's syntactical level. Such relations are not visible
+			 * at the CTE's syntactical level, and SS_finalize_plan() would
+			 * throw an error on them.
+			 */
+			IncrementVarSublevelsUp((Node *) subquery, rte->ctelevelsup, 1);
 
-		/*
-		 * Push down quals, like we do in set_subquery_pathlist()
-		 */
-		subquery = push_down_restrict(root, rel, rte, rel->relid, subquery);
+			/*
+			 * Push down quals, like we do in set_subquery_pathlist()
+			 */
+			subquery = push_down_restrict(root, rel, rte, rel->relid, subquery);
+		}
 
 		subplan = subquery_planner(cteroot->glob, subquery, root, cte->cterecursive,
 								   tuple_fraction, &subroot, config);
@@ -1052,6 +1054,7 @@ set_worktable_pathlist(PlannerInfo *root, RelOptInfo *rel, RangeTblEntry *rte)
 	Plan	   *cteplan;
 	PlannerInfo *cteroot;
 	Index		levelsup;
+	CdbLocusType ctelocus;
 
 	/*
 	 * We need to find the non-recursive term's plan, which is in the plan
@@ -1076,9 +1079,9 @@ set_worktable_pathlist(PlannerInfo *root, RelOptInfo *rel, RangeTblEntry *rte)
 	/* Mark rel with estimated output rows, width, etc */
 	set_cte_size_estimates(root, rel, cteplan);
 
+	ctelocus = cteplan->flow->locustype;
 	/* Generate appropriate path */
-	// FIXME : CTE_MERGE : Do we want pathkeys for `create_worktablescan_path`?
-	add_path(root, rel, create_worktablescan_path(root, rel));
+	add_path(root, rel, create_worktablescan_path(root, rel, ctelocus));
 
 	/* Select cheapest path (pretty easy in this case...) */
 	set_cheapest(root, rel);

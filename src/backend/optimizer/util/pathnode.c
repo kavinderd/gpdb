@@ -2420,12 +2420,19 @@ create_ctescan_path(PlannerInfo *root, RelOptInfo *rel, List *pathkeys)
  *	  returning the pathnode.
  */
 Path *
-create_worktablescan_path(PlannerInfo *root, RelOptInfo *rel)
+create_worktablescan_path(PlannerInfo *root, RelOptInfo *rel, CdbLocusType ctelocus)
 {
 	Path	   *pathnode = makeNode(Path);
 	CdbPathLocus result;
-	CdbPathLocus_MakeStrewn(&result); /* FIXME: This is a hack. */
-//	CdbPathLocus_MakeEntry(&result);
+
+	if (ctelocus == CdbLocusType_Entry)
+		CdbPathLocus_MakeEntry(&result);
+	else if (ctelocus == CdbLocusType_SingleQE)
+		CdbPathLocus_MakeSingleQE(&result);
+	else if (ctelocus == CdbLocusType_General)
+		CdbPathLocus_MakeGeneral(&result);
+	else
+		CdbPathLocus_MakeStrewn(&result);
 
 	pathnode->pathtype = T_WorkTableScan;
 	pathnode->parent = rel;

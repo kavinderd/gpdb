@@ -914,8 +914,6 @@ pull_up_Flow(Plan *plan, Plan *subplan, bool withSort)
 		Assert(subplan == plan->lefttree || subplan == plan->righttree);
 	else if ( IsA(plan, Append) )
 		Assert(list_member(((Append*)plan)->appendplans, subplan));
-	else if ( IsA(plan, RecursiveUnion) )
-		; // FIXME honestly, i don't know what should happen
 	else
 		Assert(subplan == plan->lefttree);
 
