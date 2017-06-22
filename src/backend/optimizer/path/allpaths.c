@@ -1157,23 +1157,6 @@ make_rel_from_joinlist(PlannerInfo *root, List *joinlist)
 	}
 	else
 	{
-		RelOptInfo *wtRel = NULL;
-		ListCell	*lc;
-		List *rels = NIL;
-		foreach(lc, initial_rels)
-		{
-			RelOptInfo *rel = (RelOptInfo *) lfirst(lc);
-			RangeTblEntry *rte = (RangeTblEntry *) list_nth(root->parse->rtable, rel->relid - 1);
-			if (rte->self_reference)
-			{
-				Assert(wtRel == NULL);
-				wtRel = rel;
-			}
-			else
-			{
-				rels = lappend(rels, rel);
-			}
-		}
 		/*
 		 * Consider the different orders in which we could join the rels,
 		 * using a plugin, GEQO, or the regular join search code.
@@ -1183,16 +1166,12 @@ make_rel_from_joinlist(PlannerInfo *root, List *joinlist)
 		 */
 		root->initial_rels = initial_rels;
 
-		initial_rels = rels;
-		RelOptInfo *rel;
-
-		if (wtRel != NULL)
-			levels_needed--;
-
 		if (join_search_hook)
-			rel = (*join_search_hook) (root, levels_needed, initial_rels);
+			return (*join_search_hook) (root, levels_needed, initial_rels);
 		else
 		{
+			RelOptInfo *rel;
+
 			rel = standard_join_search(root, levels_needed, initial_rels, false);
 			if (rel == NULL && root->config->gp_enable_fallback_plan)
 			{
@@ -1200,46 +1179,8 @@ make_rel_from_joinlist(PlannerInfo *root, List *joinlist)
 				root->join_rel_list = NULL;
 				rel = standard_join_search(root, levels_needed, initial_rels, true);
 			}
-		}
-
-		if (wtRel == NULL)
 			return rel;
-
-		if (wtRel->joininfo != NIL || wtRel->has_eclass_joins ||
-			has_join_restriction(root, wtRel))
-		{
-			/*
-			 * Note that if all available join clauses for this rel require
-			 * more than one other rel, we will fail to make any joins against
-			 * it here.  In most cases that's OK; it'll be considered by
-			 * "bushy plan" join code in a higher-level pass where we have
-			 * those other rels collected into a join rel.
-			 *
-			 * See also the last-ditch case below.
-			 */
-			if (!bms_overlap(wtRel->relids, rel->relids) &&
-						(have_relevant_joinclause(root, wtRel, rel) ||
-						 have_join_order_restriction(root, wtRel, rel)))
-			{
-				RelOptInfo *jrel;
-
-				jrel = make_join_rel(root, wtRel, rel);
-				set_cheapest(root, jrel);
-				return jrel;
-			}
 		}
-//		else
-//		{
-//			/*
-//			 * Oops, we have a relation that is not joined to any other
-//			 * relation, either directly or by join-order restrictions.
-//			 * Cartesian product time.
-//			 */
-//			new_rels = make_rels_by_clauseless_joins(root,
-//													 old_rel,
-//													 other_rels);
-//		}
-		return NULL;
 	}
 }
 
