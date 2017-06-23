@@ -640,7 +640,6 @@ ExecEagerFree(PlanState *node)
 		case T_SequenceState:
 		case T_PartitionSelectorState:
 		case T_WorkTableScanState:
-		case T_RecursiveUnionState: /* TODO: Eager Free RecursiveUnion */
 			break;
 
 		case T_TableScanState:
@@ -703,6 +702,10 @@ ExecEagerFree(PlanState *node)
 
 		case T_ShareInputScanState:
 			ExecEagerFreeShareInputScan((ShareInputScanState *)node);
+			break;
+
+		case T_RecursiveUnionState:
+			ExecEagerFreeRecursiveUnion((RecursiveUnionState *)node);
 			break;
 
 		default:
@@ -834,6 +837,7 @@ ExecEagerFreeChildNodes(PlanState *node, bool subplanDone)
 		case T_BitmapAndState:
 		case T_BitmapOrState:
 		case T_HashJoinState:
+		case T_RecursiveUnionState:
 		{
 			planstate_walk_node(innerPlanState(node), EagerFreeWalker, &ctx);
 			planstate_walk_node(outerPlanState(node), EagerFreeWalker, &ctx);
