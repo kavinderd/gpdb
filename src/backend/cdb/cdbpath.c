@@ -796,6 +796,8 @@ cdbpath_motion_for_join(PlannerInfo    *root,
 
     /* Don't consider replicating the preserved rel of an outer join, or
      * the current-query rel of a join between current query and subquery.
+     *
+     * WorkTableScan cannot be replicated.
      */
     outer.ok_to_replicate = outer.path->pathtype != T_WorkTableScan;
     inner.ok_to_replicate = inner.path->pathtype != T_WorkTableScan;

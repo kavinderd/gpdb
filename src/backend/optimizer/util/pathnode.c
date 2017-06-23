@@ -268,6 +268,13 @@ compare_path_costs(Path *path1, Path *path2, CostSelector criterion)
 	return 0;
 }
 
+/*
+ * compare_recursive_path_costs
+ *   JoinPath that has WorkTableScan as outer child is always cheaper.
+ *   If both paths are JointPath and only path1 has outer WTS return -1.
+ *   If both paths are JointPath and only path2 has outer WTS return +1.
+ *   Otherwise return 0.
+ */
 static int
 compare_recursive_path_costs(Path *path1, Path *path2)
 {
