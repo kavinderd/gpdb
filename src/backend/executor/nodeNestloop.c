@@ -398,7 +398,7 @@ ExecInitNestLoop(NestLoop *node, EState *estate, int eflags)
 	 * then this node is not eager free safe.
 	 */
 	nlstate->js.ps.delayEagerFree =
-		((eflags & (EXEC_FLAG_REWIND | EXEC_FLAG_BACKWARD | EXEC_FLAG_MARK)) != 0);
+		((eflags & (EXEC_FLAG_REWIND | EXEC_FLAG_BACKWARD | EXEC_FLAG_MARK | EXEC_FLAG_RECURSIVE)) != 0);
 
 	/*
 	 * initialize child expressions
