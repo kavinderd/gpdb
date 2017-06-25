@@ -758,6 +758,7 @@ typedef struct
         Path           *path;
         bool            ok_to_replicate;
         bool            require_existing_order;
+        bool            has_wts; /* Does the rel have WorkTableScan? */
 } CdbpathMfjRel;
 
 CdbPathLocus
@@ -773,7 +774,6 @@ cdbpath_motion_for_join(PlannerInfo    *root,
 {
     CdbpathMfjRel   outer;
     CdbpathMfjRel   inner;
-    bool   is_outer_wts; /* Does outer rel have WorkTableScan (WTS)? */
 
     outer.path  = *p_outer_path;
     inner.path  = *p_inner_path;
@@ -785,10 +785,11 @@ cdbpath_motion_for_join(PlannerInfo    *root,
     Assert(cdbpathlocus_is_valid(outer.locus) &&
            cdbpathlocus_is_valid(inner.locus));
 
-    /* For now, inner path should not contain WorkTableScan */
-    Assert(!cdbpath_contains_wts(inner.path));
+    outer.has_wts = cdbpath_contains_wts(outer.path);
+    inner.has_wts = cdbpath_contains_wts(inner.path);
 
-    is_outer_wts = cdbpath_contains_wts(outer.path);
+    /* For now, inner path should not contain WorkTableScan */
+    Assert(!inner.has_wts);
 
     /*
      * If outer rel contains WorkTableScan and inner rel is hash
@@ -796,7 +797,7 @@ cdbpath_motion_for_join(PlannerInfo    *root,
      * is randomly distributed, otherwise we may end up with
      * redistributing outer rel.
      */
-    if (is_outer_wts && CdbPathLocus_Degree(inner.locus) != 0)
+    if (outer.has_wts && CdbPathLocus_Degree(inner.locus) != 0)
 		CdbPathLocus_MakeStrewn(&inner.locus);
 
     /* Caller can specify an ordering for each source path that is
@@ -814,7 +815,7 @@ cdbpath_motion_for_join(PlannerInfo    *root,
      *
      * Path that contains WorkTableScan cannot be replicated.
      */
-    outer.ok_to_replicate = !is_outer_wts;
+    outer.ok_to_replicate = !outer.has_wts;
     inner.ok_to_replicate = true;
     switch (jointype)
     {
@@ -878,10 +879,9 @@ cdbpath_motion_for_join(PlannerInfo    *root,
         CdbpathMfjRel  *single = &outer;
         CdbpathMfjRel  *other = &inner;
         bool            single_immovable = (outer.require_existing_order &&
-                                           !outer_pathkeys) || is_outer_wts;
+                                           !outer_pathkeys) || outer.has_wts;
         bool            other_immovable = inner.require_existing_order &&
                                           !inner_pathkeys;
-        bool            is_other_wts = false; /* Does other rel have WTS? */
 
         /*
          * If each of the sources has a single-process locus, then assign both
@@ -904,7 +904,6 @@ cdbpath_motion_for_join(PlannerInfo    *root,
         {
             CdbSwap(CdbpathMfjRel*, single, other);
             CdbSwap(bool, single_immovable, other_immovable);
-            is_other_wts = is_outer_wts;
         }
         Assert(CdbPathLocus_IsBottleneck(single->locus));
         Assert(CdbPathLocus_IsPartitioned(other->locus));
@@ -942,7 +941,7 @@ cdbpath_motion_for_join(PlannerInfo    *root,
             CdbPathLocus_MakeReplicated(&single->move_to);
 
         /* Broadcast single rel if other rel has WorkTableScan */
-        else if (single->ok_to_replicate && is_other_wts)
+        else if (single->ok_to_replicate && other->has_wts)
             CdbPathLocus_MakeReplicated(&single->move_to);
 
         /* Last resort: Move all partitions of other rel to single QE. */
