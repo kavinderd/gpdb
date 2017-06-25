@@ -773,7 +773,7 @@ cdbpath_motion_for_join(PlannerInfo    *root,
 {
     CdbpathMfjRel   outer;
     CdbpathMfjRel   inner;
-    bool   is_outer_wts;
+    bool   is_outer_wts; /* Does outer rel have WorkTableScan (WTS)? */
 
     outer.path  = *p_outer_path;
     inner.path  = *p_inner_path;
@@ -793,7 +793,7 @@ cdbpath_motion_for_join(PlannerInfo    *root,
     /*
      * If outer rel contains WorkTableScan and inner rel is hash
      * distributed, unfortunately we have to pretend that inner
-     * is randomly distributed, other wise we will end up with
+     * is randomly distributed, otherwise we may end up with
      * redistributing outer rel.
      */
     if (is_outer_wts && CdbPathLocus_Degree(inner.locus) != 0)
@@ -877,10 +877,11 @@ cdbpath_motion_for_join(PlannerInfo    *root,
     {                                       /* singleQE or entry db */
         CdbpathMfjRel  *single = &outer;
         CdbpathMfjRel  *other = &inner;
-        bool            single_immovable = outer.require_existing_order &&
-                                           !outer_pathkeys;
+        bool            single_immovable = (outer.require_existing_order &&
+                                           !outer_pathkeys) || is_outer_wts;
         bool            other_immovable = inner.require_existing_order &&
                                           !inner_pathkeys;
+        bool            is_other_wts = false; /* Does other rel have WTS? */
 
         /*
          * If each of the sources has a single-process locus, then assign both
@@ -903,6 +904,7 @@ cdbpath_motion_for_join(PlannerInfo    *root,
         {
             CdbSwap(CdbpathMfjRel*, single, other);
             CdbSwap(bool, single_immovable, other_immovable);
+            is_other_wts = is_outer_wts;
         }
         Assert(CdbPathLocus_IsBottleneck(single->locus));
         Assert(CdbPathLocus_IsPartitioned(other->locus));
@@ -937,6 +939,10 @@ cdbpath_motion_for_join(PlannerInfo    *root,
          */
         else if (single->ok_to_replicate &&
                  single->bytes < other->bytes)
+            CdbPathLocus_MakeReplicated(&single->move_to);
+
+        /* Broadcast single rel if other rel has WorkTableScan */
+        else if (single->ok_to_replicate && is_other_wts)
             CdbPathLocus_MakeReplicated(&single->move_to);
 
         /* Last resort: Move all partitions of other rel to single QE. */
