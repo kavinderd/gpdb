@@ -773,6 +773,7 @@ cdbpath_motion_for_join(PlannerInfo    *root,
 {
     CdbpathMfjRel   outer;
     CdbpathMfjRel   inner;
+    bool   is_outer_wts;
 
     outer.path  = *p_outer_path;
     inner.path  = *p_inner_path;
@@ -783,6 +784,20 @@ cdbpath_motion_for_join(PlannerInfo    *root,
 
     Assert(cdbpathlocus_is_valid(outer.locus) &&
            cdbpathlocus_is_valid(inner.locus));
+
+    /* For now, inner path should not contain WorkTableScan */
+    Assert(!cdbpath_contains_wts(inner.path));
+
+    is_outer_wts = cdbpath_contains_wts(outer.path);
+
+    /*
+     * If outer rel contains WorkTableScan and inner rel is hash
+     * distributed, unfortunately we have to pretend that inner
+     * is randomly distributed, other wise we will end up with
+     * redistributing outer rel.
+     */
+    if (is_outer_wts && CdbPathLocus_Degree(inner.locus) != 0)
+		CdbPathLocus_MakeStrewn(&inner.locus);
 
     /* Caller can specify an ordering for each source path that is
      * the same as or weaker than the path's existing ordering.
@@ -797,10 +812,10 @@ cdbpath_motion_for_join(PlannerInfo    *root,
     /* Don't consider replicating the preserved rel of an outer join, or
      * the current-query rel of a join between current query and subquery.
      *
-     * WorkTableScan cannot be replicated.
+     * Path that contains WorkTableScan cannot be replicated.
      */
-    outer.ok_to_replicate = outer.path->pathtype != T_WorkTableScan;
-    inner.ok_to_replicate = inner.path->pathtype != T_WorkTableScan;
+    outer.ok_to_replicate = !is_outer_wts;
+    inner.ok_to_replicate = true;
     switch (jointype)
     {
         case JOIN_INNER:
@@ -1547,3 +1562,24 @@ cdbpath_dedup_fixup(PlannerInfo *root, Path *path)
            !context.need_segment_id &&
            !context.need_subplan_id);
 }                               /* cdbpath_dedup_fixup */
+
+/*
+ * Does the path contain WorkTableScan?
+ */
+bool
+cdbpath_contains_wts(Path *path)
+{
+	JoinPath *joinPath;
+
+	if (IsJoinPath(path))
+	{
+		joinPath = (JoinPath *) path;
+		if (cdbpath_contains_wts(joinPath->outerjoinpath)
+				|| cdbpath_contains_wts(joinPath->innerjoinpath))
+			return true;
+		else
+			return false;
+	}
+	else
+		return path->pathtype == T_WorkTableScan;
+}

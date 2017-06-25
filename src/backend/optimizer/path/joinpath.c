@@ -83,8 +83,8 @@ add_paths_to_joinrel(PlannerInfo *root,
            innerrel->cheapest_total_path);
 
 	/* Don't consider paths that have WorkTableScan as inner rel */
-	if (innerrel->cheapest_startup_path->pathtype == T_WorkTableScan ||
-		innerrel->cheapest_total_path->pathtype == T_WorkTableScan)
+	if (cdbpath_contains_wts(innerrel->cheapest_startup_path) ||
+		cdbpath_contains_wts(innerrel->cheapest_total_path))
 		return;
 
 	/*
