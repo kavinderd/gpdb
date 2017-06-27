@@ -1575,6 +1575,8 @@ bool
 cdbpath_contains_wts(Path *path)
 {
 	JoinPath *joinPath;
+	AppendPath *appendPath;
+	ListCell *lc;
 
 	if (IsJoinPath(path))
 	{
@@ -1585,6 +1587,16 @@ cdbpath_contains_wts(Path *path)
 		else
 			return false;
 	}
-	else
-		return path->pathtype == T_WorkTableScan;
+	else if (IsA(path, AppendPath))
+	{
+		appendPath = (AppendPath *) path;
+		foreach(lc, appendPath->subpaths)
+		{
+			if (cdbpath_contains_wts((Path *) lfirst(lc)))
+				return true;
+		}
+		return false;
+	}
+
+	return path->pathtype == T_WorkTableScan;
 }
