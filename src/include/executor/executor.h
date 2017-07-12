@@ -335,6 +335,8 @@ extern void ReScanHeapRelation(ScanState *scanState);
 extern void MarkPosHeapRelation(ScanState *scanState);
 extern void RestrPosHeapRelation(ScanState *scanState);
 
+extern TupleTableSlot *HeapScanNextBatch(ScanState *scanState);
+
 /*
  * prototypes from functions in execAppendOnlyScan.c
  */

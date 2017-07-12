@@ -28,6 +28,130 @@ FreeHeapScanOpaque(ScanState *scanState)
 }
 
 TupleTableSlot *
+HeapScanNextBatch(ScanState *scanState)
+{
+	Assert(IsA(scanState, TableScanState) ||
+		   IsA(scanState, DynamicTableScanState));
+	SeqScanState *node = (SeqScanState *)scanState;
+	Assert(node->opaque != NULL);
+
+	HeapTuple	tuple;
+	HeapScanDesc scandesc;
+	Index		scanrelid;
+	EState	   *estate;
+	ScanDirection direction;
+	TupleTableSlot *slot;
+
+	Assert((node->ss.scan_state & SCAN_SCAN) != 0);
+
+	/*
+	 * get information from the estate and scan state
+	 */
+	estate = node->ss.ps.state;
+	scandesc = node->opaque->ss_currentScanDesc;
+	scanrelid = ((SeqScan *) node->ss.ps.plan)->scanrelid;
+	direction = estate->es_direction;
+	slot = node->ss.ss_ScanTupleSlot;
+
+	if (scandesc->tuple_batch[scandesc->cur_batch_index] != NULL)
+	{
+		return scandesc->tuple_batch[scandesc->cur_batch_index++];
+	}
+
+	/*
+	 * Check if we are evaluating PlanQual for tuple of this relation.
+	 * Additional checking is not good, but no other way for now. We could
+	 * introduce new nodes for this case and handle SeqScan --> NewNode
+	 * switching in Init/ReScan plan...
+	 */
+	if (estate->es_evTuple != NULL &&
+		estate->es_evTuple[scanrelid - 1] != NULL)
+	{
+		if (estate->es_evTupleNull[scanrelid - 1])
+		{
+			return ExecClearTuple(slot);
+		}
+
+		ExecStoreGenericTuple(estate->es_evTuple[scanrelid - 1], slot, false);
+
+		/*
+		 * Note that unlike IndexScan, SeqScan never uses keys in
+		 * heap_beginscan (and this is very bad) - so, here we do not check
+		 * the keys.
+		 */
+
+		/* Flag for the next call that no more tuples */
+		estate->es_evTupleNull[scanrelid - 1] = true;
+		return slot;
+	}
+
+	/*
+	 * get the next tuple from the access methods
+	 */
+	int i;
+	scandesc->cur_batch_index = 0;
+	for (i= 0; i < 1000; i++)
+	{
+		if (node->opaque->ss_heapTupleData.bot == node->opaque->ss_heapTupleData.top &&
+			!node->opaque->ss_heapTupleData.seen_EOS)
+		{
+			node->opaque->ss_heapTupleData.last = NULL;
+			node->opaque->ss_heapTupleData.bot = 0;
+			node->opaque->ss_heapTupleData.top = lengthof(node->opaque->ss_heapTupleData.item);
+			heap_getnextx(scandesc, direction, node->opaque->ss_heapTupleData.item,
+						  &node->opaque->ss_heapTupleData.top,
+						  &node->opaque->ss_heapTupleData.seen_EOS);
+
+			if (scandesc->rs_pageatatime &&
+			   IsA(scanState, TableScanState))
+			{
+				CheckSendPlanStateGpmonPkt(&node->ss.ps);
+			}
+		}
+
+		node->opaque->ss_heapTupleData.last = NULL;
+		if (node->opaque->ss_heapTupleData.bot < node->opaque->ss_heapTupleData.top)
+		{
+			 node->opaque->ss_heapTupleData.last =
+				 &node->opaque->ss_heapTupleData.item[node->opaque->ss_heapTupleData.bot++];
+		}
+
+		tuple = node->opaque->ss_heapTupleData.last;
+
+		//TODO: Here the tuple returned needs to be retrieved from a buffer
+		/*
+		 * save the tuple and the buffer returned to us by the access methods in
+		 * our scan tuple slot and return the slot.  Note: we pass 'false' because
+		 * tuples returned by heap_getnext() are pointers onto disk pages and were
+		 * not created with palloc() and so should not be pfree()'d.  Note also
+		 * that ExecStoreTuple will increment the refcount of the buffer; the
+		 * refcount will not be dropped until the tuple table slot is cleared.
+		 */
+		if (tuple)
+		{
+			ExecStoreHeapTuple(tuple,
+							   slot,
+							   scandesc->rs_cbuf,
+							   false);
+		}
+
+		else
+		{
+			ExecClearTuple(slot);
+		}
+
+		scandesc->tuple_batch[i] = slot;
+	}
+	//Just in case the batch doesn't have enough tuples clear them out
+	while (i < 1000)
+	{
+		scandesc->tuple_batch[i++] = NULL;
+	}
+
+	return scandesc->tuple_batch[scandesc->cur_batch_index++];
+}
+
+TupleTableSlot *
 HeapScanNext(ScanState *scanState)
 {
 	Assert(IsA(scanState, TableScanState) ||

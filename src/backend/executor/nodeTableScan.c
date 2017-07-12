@@ -39,7 +39,15 @@ ExecTableScan(TableScanState *node)
 		BeginTableScanRelation(scanState);
 	}
 
-	TupleTableSlot *slot = ExecTableScanRelation(scanState);
+	TupleTableSlot *slot;
+	if (memory_profiler_dataset_size == 1000)
+	{
+		slot = ExecVectorizedTableScanRelation(scanState);
+	}
+	else
+	{
+		slot = ExecTableScanRelation(scanState);
+	}
 	
 	if (!TupIsNull(slot))
 	{

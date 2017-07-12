@@ -53,6 +53,9 @@ typedef struct HeapScanDescData
 	int			rs_mindex;		/* marked tuple's saved index */
 	int			rs_ntuples;		/* number of visible tuples on page */
 	OffsetNumber rs_vistuples[MaxHeapTuplesPerPage];	/* their offsets */
+
+	int cur_batch_index;
+	struct TupleTableSlot *tuple_batch[1000];
 } HeapScanDescData;
 
 typedef HeapScanDescData *HeapScanDesc;
