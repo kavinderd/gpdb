@@ -510,6 +510,27 @@ MemoryAccounting_SaveToLog()
 	}
 }
 
+void*
+MemoryAccounting_ExternalAlloc(size_t size)
+{
+	MemoryAccount *account = MemoryAccounting_ConvertIdToAccount(ActiveMemoryAccountId);
+	if (account->ownerType == MEMORY_OWNER_TYPE_Optimizer)
+		MemoryAccounting_Allocate(ActiveMemoryAccountId, size);
+	return malloc(size);
+}
+
+void
+MemoryAccounting_ExternalFree(void *ptr)
+{
+	MemoryAccount *account = MemoryAccounting_ConvertIdToAccount(ActiveMemoryAccountId);
+	if (account->ownerType == MEMORY_OWNER_TYPE_Optimizer)
+	{
+		size_t freed_size = gpos_get_pointer_size(ptr);
+		MemoryAccounting_Free(ActiveMemoryAccountId, freed_size);
+	}
+	free(ptr);
+}
+
 /*****************************************************************************
  *	  PRIVATE ROUTINES FOR MEMORY ACCOUNTING								 *
  *****************************************************************************/

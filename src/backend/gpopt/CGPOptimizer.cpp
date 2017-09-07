@@ -22,6 +22,7 @@
 #include "gpos/_api.h"
 
 #include "naucrates/exception.h"
+#include "utils/guc.h"
 
 extern MemoryContext MessageContext;
 
@@ -126,7 +127,14 @@ void
 CGPOptimizer::InitGPOPT ()
 {
   // Use GPORCA's default allocators
-  struct gpos_init_params params = { NULL, NULL };
+  void *(*gpos_alloc)(size_t) = NULL;
+  void (*gpos_free)(void *) = NULL;
+  if (optimizer_use_gpdb_allocators)
+  {
+	gpos_alloc = MemoryAccounting_ExternalAlloc;
+	gpos_free = MemoryAccounting_ExternalFree;
+  }
+  struct gpos_init_params params = { gpos_alloc, gpos_free};
   gpos_init(&params);
   gpdxl_init();
   gpopt_init();
