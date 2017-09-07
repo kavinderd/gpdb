@@ -30,6 +30,8 @@
 
 #include "gpopt/gpdbwrappers.h"
 
+#include "utils/memaccounting.h"
+
 #define GP_WRAP_START	\
 	sigjmp_buf local_sigjmp_buf;	\
 	{	\
@@ -3071,6 +3073,35 @@ gpdb::FMDCacheNeedsReset
 	GP_WRAP_END;
 
 	return true;
+}
+
+// Functions for ORCA's memory consumption to be tracked by GPDB
+void*
+gpdb::OptimizerAlloc
+		(
+			size_t size
+		)
+{
+	GP_WRAP_START;
+	{
+		return MemoryAccounting_OptimizerAlloc(size);
+	}
+	GP_WRAP_END;
+
+	return NULL;
+}
+
+void
+gpdb::OptimizerFree
+		(
+			void *ptr
+		)
+{
+	GP_WRAP_START;
+	{
+		MemoryAccounting_OptimizerFree(ptr);
+	}
+	GP_WRAP_END;
 }
 
 // EOF

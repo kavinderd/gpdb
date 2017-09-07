@@ -20,6 +20,7 @@
 #include "naucrates/init.h"
 #include "gpopt/init.h"
 #include "gpos/_api.h"
+#include "gpopt/gpdbwrappers.h"
 
 #include "naucrates/exception.h"
 #include "utils/guc.h"
@@ -131,8 +132,8 @@ CGPOptimizer::InitGPOPT ()
   void (*gpos_free)(void *) = NULL;
   if (optimizer_use_gpdb_allocators)
   {
-	gpos_alloc = MemoryAccounting_ExternalAlloc;
-	gpos_free = MemoryAccounting_ExternalFree;
+	gpos_alloc = gpdb::OptimizerAlloc;
+	gpos_free = gpdb::OptimizerFree;
   }
   struct gpos_init_params params = { gpos_alloc, gpos_free};
   gpos_init(&params);

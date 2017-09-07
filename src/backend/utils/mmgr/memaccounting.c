@@ -25,6 +25,7 @@
 #include "miscadmin.h"
 #include "utils/vmem_tracker.h"
 #include "utils/memaccounting_private.h"
+#include "utils/gp_alloc.h"
 
 #define MEMORY_REPORT_FILE_NAME_LENGTH 255
 #define SHORT_LIVING_MEMORY_ACCOUNT_ARRAY_INIT_LEN 64
@@ -511,24 +512,25 @@ MemoryAccounting_SaveToLog()
 }
 
 void*
-MemoryAccounting_ExternalAlloc(size_t size)
+MemoryAccounting_OptimizerAlloc(size_t size)
 {
 	MemoryAccount *account = MemoryAccounting_ConvertIdToAccount(ActiveMemoryAccountId);
 	if (account->ownerType == MEMORY_OWNER_TYPE_Optimizer)
 		MemoryAccounting_Allocate(ActiveMemoryAccountId, size);
-	return malloc(size);
+	return gp_malloc(size);
 }
 
 void
-MemoryAccounting_ExternalFree(void *ptr)
+MemoryAccounting_OptimizerFree(void *ptr)
 {
 	MemoryAccount *account = MemoryAccounting_ConvertIdToAccount(ActiveMemoryAccountId);
 	if (account->ownerType == MEMORY_OWNER_TYPE_Optimizer)
 	{
-		size_t freed_size = gpos_get_pointer_size(ptr);
+		void *malloc_pointer = UserPtr_GetVmemPtr(ptr);
+		size_t freed_size = VmemPtr_GetUserPtrSize((VmemHeader*) malloc_pointer);
 		MemoryAccounting_Free(ActiveMemoryAccountId, freed_size);
 	}
-	free(ptr);
+	gp_free(ptr);
 }
 
 /*****************************************************************************
