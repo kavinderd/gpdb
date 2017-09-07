@@ -234,10 +234,10 @@ extern void
 MemoryAccounting_PrettyPrint(void);
 
 extern void
-MemoryAccounting_ExternalFree(void *ptr);
+MemoryAccounting_OptimizerFree(void *ptr);
 
 extern void*
-MemoryAccounting_ExternalAlloc(size_t size);
+MemoryAccounting_OptimizerAlloc(size_t size);
 
 
 #endif   /* MEMACCOUNTING_H */
