@@ -135,7 +135,7 @@ CGPOptimizer::InitGPOPT ()
 	gpos_alloc = gpdb::OptimizerAlloc;
 	gpos_free = gpdb::OptimizerFree;
   }
-  struct gpos_init_params params = { gpos_alloc, gpos_free};
+  struct gpos_init_params params = {gpos_alloc, gpos_free};
   gpos_init(&params);
   gpdxl_init();
   gpopt_init();

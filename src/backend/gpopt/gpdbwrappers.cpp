@@ -3076,7 +3076,7 @@ gpdb::FMDCacheNeedsReset
 }
 
 // Functions for ORCA's memory consumption to be tracked by GPDB
-void*
+void *
 gpdb::OptimizerAlloc
 		(
 			size_t size
