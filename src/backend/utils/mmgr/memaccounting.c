@@ -178,6 +178,12 @@ MemoryAccount *RolloverMemoryAccount = NULL;
 MemoryAccount *AlienExecutorMemoryAccount = NULL;
 
 /*
+ * RelinqishedPoolMemoryAccount is a shared executor account that tracks amount
+ * of additional free memory available for execution
+ */
+MemoryAccount *RelinquishedPoolMemoryAccount = NULL;
+
+/*
  * Total outstanding (i.e., allocated - freed) memory across all
  * memory accounts, including RolloverMemoryAccount
  */
@@ -227,6 +233,30 @@ MemoryAccounting_Reset()
 	}
 
 	InitMemoryAccounting();
+}
+
+/*
+ * MemoryAccounting_DeclareDone
+ * 		Increments the RelinquishedPoolMemoryAccount by the difference between the current
+ * 		Memory Account's quota and allocated amount.
+ * 		This should only be called when a MemoryAccount is certain that it will not
+ * 		allocate any more memory
+ */
+uint64
+MemoryAccounting_DeclareDone()
+{
+	MemoryAccount *currentAccount = MemoryAccounting_ConvertIdToAccount(ActiveMemoryAccountId);
+	uint64 relinquished = 0;
+	if (currentAccount->maxLimit > 0)
+	{
+		relinquished = currentAccount->maxLimit - currentAccount->allocated;
+		RelinquishedPoolMemoryAccount->allocated += relinquished;
+		if (RelinquishedPoolMemoryAccount->peak < RelinquishedPoolMemoryAccount->allocated)
+			RelinquishedPoolMemoryAccount->peak = RelinquishedPoolMemoryAccount->allocated;
+	}
+
+	elog(DEBUG2, "Memory Account %d relinquished %u bits of memory", currentAccount->ownerType, relinquished);
+	return relinquished;
 }
 
 /*
@@ -568,6 +598,9 @@ InitLongLivingAccounts() {
 			longLivingMemoryAccountArray[MEMORY_OWNER_TYPE_MemAccount];
 	AlienExecutorMemoryAccount =
 			longLivingMemoryAccountArray[MEMORY_OWNER_TYPE_Exec_AlienShared];
+	RelinquishedPoolMemoryAccount =
+			longLivingMemoryAccountArray[MEMORY_OWNER_TYPE_Exec_RelinquishedPool];
+
 }
 
 /* Initializes all the short living accounts */
@@ -694,6 +727,7 @@ CreateMemoryAccountImpl(long maxLimit, MemoryOwnerType ownerType, MemoryAccountI
 	Assert(ownerType == MEMORY_OWNER_TYPE_LogicalRoot || ownerType == MEMORY_OWNER_TYPE_SharedChunkHeader ||
 			ownerType == MEMORY_OWNER_TYPE_Rollover || ownerType == MEMORY_OWNER_TYPE_MemAccount ||
 			ownerType == MEMORY_OWNER_TYPE_Exec_AlienShared ||
+			ownerType == MEMORY_OWNER_TYPE_Exec_RelinquishedPool ||
 			(MemoryAccountMemoryContext != NULL && MemoryAccountMemoryAccount != NULL));
 
 	if (ownerType <= MEMORY_OWNER_TYPE_END_LONG_LIVING || ownerType == MEMORY_OWNER_TYPE_Top)
@@ -992,6 +1026,8 @@ MemoryAccounting_GetOwnerName(MemoryOwnerType ownerType)
 		return "MemAcc";
 	case MEMORY_OWNER_TYPE_Exec_AlienShared:
 		return "X_Alien";
+	case MEMORY_OWNER_TYPE_Exec_RelinquishedPool:
+		return "RelinquishedPool";
 
 		/* Short living accounts */
 	case MEMORY_OWNER_TYPE_Top:
@@ -1335,6 +1371,13 @@ AdvanceMemoryAccountingGeneration()
 	 * includes SharedChunkHeadersMemoryAccount balance.
 	 */
 	RolloverMemoryAccount->peak = Max(RolloverMemoryAccount->peak, MemoryAccountingPeakBalance);
+
+	/*
+	 * Reset the RelinquishedPool Long living account, the amount should not be carried between memory account generations
+	 */
+	RelinquishedPoolMemoryAccount->allocated = 0;
+	RelinquishedPoolMemoryAccount->peak = 0;
+	RelinquishedPoolMemoryAccount->freed = 0;
 
 	liveAccountStartId = nextAccountId;
 

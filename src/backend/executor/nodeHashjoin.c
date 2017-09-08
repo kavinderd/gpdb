@@ -1196,7 +1196,7 @@ ReleaseHashTable(HashJoinState *node)
 {
 	if (node->hj_HashTable)
 	{
-		HashState  *hashState = (HashState *) innerPlanState(node);
+		HashState *hashState = (HashState *) innerPlanState(node);
 
 		/* This hashtable should not have been released already! */
 		Assert(!node->hj_HashTable->eagerlyReleased);
@@ -1207,6 +1207,7 @@ ReleaseHashTable(HashJoinState *node)
 		}
 		ExecHashTableDestroy(hashState, node->hj_HashTable);
 		node->hj_HashTable->eagerlyReleased = true;
+		MemoryAccounting_DeclareDone();
 	}
 
 	/* Always reset intra-tuple state */
