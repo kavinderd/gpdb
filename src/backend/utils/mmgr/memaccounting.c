@@ -512,6 +512,23 @@ MemoryAccounting_SaveToLog()
 	}
 }
 
+void
+MemoryAccounting_CurrentOptimizerPeak(OptimizerMemAccountStats *optimizerMemAccountStats)
+{
+	int shortLivingCount = shortLivingMemoryAccountArray->accountCount;
+
+	for (MemoryAccountIdType shortLivingArrayIdx = 0; shortLivingArrayIdx < shortLivingCount; shortLivingArrayIdx++)
+	{
+		MemoryAccount* shortLivingAccount = shortLivingMemoryAccountArray->allAccounts[shortLivingArrayIdx];
+		if (shortLivingAccount->ownerType == MEMORY_OWNER_TYPE_Optimizer)
+		{
+			optimizerMemAccountStats->peak = shortLivingAccount->peak;
+			optimizerMemAccountStats->allocated = shortLivingAccount->allocated;
+			optimizerMemAccountStats->freed = shortLivingAccount->freed;
+		}
+	}
+}
+
 /*****************************************************************************
  *	  PRIVATE ROUTINES FOR MEMORY ACCOUNTING								 *
  *****************************************************************************/

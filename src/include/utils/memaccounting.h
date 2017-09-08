@@ -21,6 +21,13 @@
 
 struct MemoryContextData;
 
+typedef struct OptimizerMemAccountStats
+{
+	uint64 peak;
+	uint64 allocated;
+	uint64 freed;
+} OptimizerMemAccountStats;
+
 /* Macros to define the level of memory accounting to show in EXPLAIN ANALYZE */
 #define EXPLAIN_MEMORY_VERBOSITY_SUPPRESS  0 /* Suppress memory reporting in explain analyze */
 #define EXPLAIN_MEMORY_VERBOSITY_SUMMARY  1 /* Summary of memory usage for each owner in explain analyze */
@@ -232,5 +239,8 @@ MemoryAccounting_SaveToLog(void);
 
 extern void
 MemoryAccounting_PrettyPrint(void);
+
+extern void
+MemoryAccounting_CurrentOptimizerPeak(OptimizerMemAccountStats *optimizerMemAccountStats);
 
 #endif   /* MEMACCOUNTING_H */
