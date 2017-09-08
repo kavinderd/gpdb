@@ -2168,6 +2168,15 @@ cdbexplain_showExecStatsEnd(struct PlannedStmt *stmt,
 	{
 		appendStringInfoString(str, "Statement statistics:\n");
 		appendStringInfo(str, "  Memory used: %.0fK bytes", ceil((double) stmt->query_mem / 1024.0));
+		if (optimizer && explain_memory_verbosity == EXPLAIN_MEMORY_VERBOSITY_SUMMARY )
+		{
+			OptimizerMemAccountStats optimizerMemAccountStats;
+			MemoryAccounting_CurrentOptimizerPeak(&optimizerMemAccountStats);
+			appendStringInfo(str, "\n  ORCA Memory used: peak %.0fK bytes  allocated %.0fK bytes  freed %.0fK bytes ",
+							 ceil((double) optimizerMemAccountStats.peak / 1024L),
+							 ceil((double)optimizerMemAccountStats.allocated / 1024L),
+							 ceil((double) optimizerMemAccountStats.freed / 1024L));
+		}
 
 		if (showstatctx->workmemwanted_max > 0)
 		{
