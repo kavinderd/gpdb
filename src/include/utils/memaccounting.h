@@ -76,7 +76,8 @@ typedef enum MemoryOwnerType
 	MEMORY_OWNER_TYPE_Rollover,
 	MEMORY_OWNER_TYPE_MemAccount,
 	MEMORY_OWNER_TYPE_Exec_AlienShared,
-	MEMORY_OWNER_TYPE_END_LONG_LIVING = MEMORY_OWNER_TYPE_Exec_AlienShared,
+	MEMORY_OWNER_TYPE_Exec_RelinquishedPool,
+	MEMORY_OWNER_TYPE_END_LONG_LIVING = MEMORY_OWNER_TYPE_Exec_RelinquishedPool,
 	/* End of long-living accounts */
 
 	/* Short-living accounts */
@@ -238,6 +239,9 @@ MemoryAccounting_OptimizerFree(void *ptr);
 
 extern void*
 MemoryAccounting_OptimizerAlloc(size_t size);
+
+extern uint64
+MemoryAccounting_DeclareDone();
 
 
 #endif   /* MEMACCOUNTING_H */
