@@ -2170,6 +2170,9 @@ uint64 PlanStateOperatorMemKB(const PlanState *ps)
 	}
 	else
 	{
+		//TODO: Figure out if we have a memory intensive node then increase its operatorMemKb and increase its MemoryAccount
+		uint64 additionalMemory = MemoryAccounting_RequestQuotaIncrease();
+		ps->plan->operatorMemKb += additionalMemory;
 		result = ps->plan->operatorMemKB;
 	}
 	
