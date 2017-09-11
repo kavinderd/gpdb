@@ -1207,7 +1207,6 @@ ReleaseHashTable(HashJoinState *node)
 		}
 		ExecHashTableDestroy(hashState, node->hj_HashTable);
 		node->hj_HashTable->eagerlyReleased = true;
-		MemoryAccounting_DeclareDone();
 	}
 
 	/* Always reset intra-tuple state */
