@@ -56,7 +56,7 @@ typedef struct PolicyAutoContext
 static bool PolicyAutoPrelimWalker(Node *node, PolicyAutoContext *context);
 static bool	PolicyAutoAssignWalker(Node *node, PolicyAutoContext *context);
 static bool IsAggMemoryIntensive(Agg *agg);
-static bool IsMemoryIntensiveOperator(Node *node, PlannedStmt *stmt);
+bool IsMemoryIntensiveOperator(Node *node, PlannedStmt *stmt);
 
 struct OperatorGroupNode;
 
@@ -289,7 +289,7 @@ IsFunctionScanMemoryIntensive(FunctionScan *funcScan, PlannedStmt *stmt)
 /**
  * Is an operator memory intensive?
  */
-static bool
+bool
 IsMemoryIntensiveOperator(Node *node, PlannedStmt *stmt)
 {
 	Assert(is_plan_node(node));

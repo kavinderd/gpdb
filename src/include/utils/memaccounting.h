@@ -243,5 +243,7 @@ MemoryAccounting_OptimizerAlloc(size_t size);
 extern uint64
 MemoryAccounting_DeclareDone();
 
+extern uint64
+MemoryAccounting_RequestQuotaIncrease();
 
 #endif   /* MEMACCOUNTING_H */

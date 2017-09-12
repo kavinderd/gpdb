@@ -251,12 +251,22 @@ MemoryAccounting_DeclareDone()
 	{
 		relinquished = currentAccount->maxLimit - currentAccount->allocated;
 		RelinquishedPoolMemoryAccount->allocated += relinquished;
-		if (RelinquishedPoolMemoryAccount->peak < RelinquishedPoolMemoryAccount->allocated)
-			RelinquishedPoolMemoryAccount->peak = RelinquishedPoolMemoryAccount->allocated;
+		currentAccount->relinquishedMemory = relinquished;
 	}
 
 	elog(DEBUG2, "Memory Account %d relinquished %u bits of memory", currentAccount->ownerType, relinquished);
 	return relinquished;
+}
+
+uint64
+MemoryAccounting_RequestQuotaIncrease()
+{
+	MemoryAccount *currentAccount = MemoryAccounting_ConvertIdToAccount(ActiveMemoryAccountId);
+
+	uint64 result = RelinquishedPoolMemoryAccount->allocated;
+	currentAccount->acquiredMemory = result;
+	RelinquishedPoolMemoryAccount->allocated = 0;
+	return result;
 }
 
 /*
@@ -685,6 +695,8 @@ InitializeMemoryAccount(MemoryAccount *newAccount, long maxLimit, MemoryOwnerTyp
 	newAccount->allocated = 0;
 	newAccount->freed = 0;
 	newAccount->peak = 0;
+	newAccount->relinquishedMemory = 0;
+	newAccount->acquiredMemory = 0;
 	newAccount->parentId = parentAccountId;
 
 	if (ownerType <= MEMORY_OWNER_TYPE_END_LONG_LIVING)
@@ -991,15 +1003,22 @@ MemoryAccountToString(MemoryAccountTree *memoryAccountTreeNode, void *context, u
 
 	MemoryAccount *memoryAccount = memoryAccountTreeNode->account;
 
+	if (memoryAccount->ownerType == MEMORY_OWNER_TYPE_Exec_RelinquishedPool) return CdbVisit_Walk;
+
 	MemoryAccountSerializerCxt *memAccountCxt = (MemoryAccountSerializerCxt*) context;
 
 	appendStringInfoFill(memAccountCxt->buffer, 2 * depth, ' ');
 
 	Assert(memoryAccount->peak >= MemoryAccounting_GetBalance(memoryAccount));
 	/* We print only integer valued memory consumption, in standard GPDB KB unit */
-	appendStringInfo(memAccountCxt->buffer, "%s: Peak/Cur " UINT64_FORMAT "/" UINT64_FORMAT "bytes. Quota: " UINT64_FORMAT "bytes.\n",
+	appendStringInfo(memAccountCxt->buffer, "%s: Peak/Cur " UINT64_FORMAT "/" UINT64_FORMAT " bytes. Quota: " UINT64_FORMAT " bytes.",
 			MemoryAccounting_GetOwnerName(memoryAccount->ownerType),
 			memoryAccount->peak, MemoryAccounting_GetBalance(memoryAccount), memoryAccount->maxLimit);
+	if (memoryAccount->relinquishedMemory > 0)
+		appendStringInfo(memAccountCxt->buffer, " Relinquished Memory: " UINT64_FORMAT " bytes. ", memoryAccount->relinquishedMemory);
+	if (memoryAccount->acquiredMemory > 0)
+		appendStringInfo(memAccountCxt->buffer, " Acquired Additional Memory: " UINT64_FORMAT " bytes.", memoryAccount->acquiredMemory);
+	appendStringInfo(memAccountCxt->buffer, "\n");
 
 	memAccountCxt->memoryAccountCount++;
 

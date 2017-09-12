@@ -74,6 +74,8 @@
 #include "storage/ipc.h"
 #include "cdb/cdbllize.h"
 
+#include "cdb/memquota.h"
+
 static void ShutdownExprContext(ExprContext *econtext);
 
 
@@ -2170,7 +2172,12 @@ uint64 PlanStateOperatorMemKB(const PlanState *ps)
 	}
 	else
 	{
-		result = ps->plan->operatorMemKB;
+		if (memory_profiler_dataset_size == 1000 && IsMemoryIntensiveOperator((Node *)ps->plan, ps->state->es_plannedstmt))
+		{
+			result = ps->plan->operatorMemKB + MemoryAccounting_RequestQuotaIncrease();
+		}
+		else
+			result = ps->plan->operatorMemKB;
 	}
 	
 	return result;
